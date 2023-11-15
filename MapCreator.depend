@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1699933722 source:d:\codigo\mapcreator\main.c
+	<stdlib.h>
+	<stdio.h>
+	"color.h"
+	<string.h>
+
+1699808732 d:\codigo\mapcreator\color.h
+
