@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include "color.h"
 #include <string.h>
+#include <windows.h>
+
+//TENER EN CUENTA QUE PARA QUE EL CURSOR FUNCIONE LA FUENTE DE LA CONSOLA TIENE QUE SER 16
 
 
 typedef struct indicator{
@@ -13,14 +16,20 @@ typedef struct indicator{
 const int fil = 28;
 const int col = 96;
 char archivoMapas[20] = "mapas.dat";
+POINT cursorPos;
+HWND hwndFound;
+#define MY_BUFSIZE 1024
+char pszOldWindowTitle[MY_BUFSIZE];
 
 
 int main(){
 
+GetConsoleTitle(pszOldWindowTitle, MY_BUFSIZE);
+hwndFound=FindWindow(NULL, pszOldWindowTitle);
     char mapa[28][96];
     indicator cursor;
-    cursor.indicatorY = fil/2;
-    cursor.indicatorX = col/2;
+    cursor.indicatorY = cursorPos.y/16 - 1;
+    cursor.indicatorX = cursorPos.x/8 - 1;
 
     memset(mapa, 219, sizeof(mapa));
 
@@ -32,17 +41,25 @@ int main(){
 
     if(eleccion == 'c'){
 
-    while(1){
-    printf("\x1b[H");
+    for(;;){
     system("");
     estrucuraBasica(mapa);
     indicador(mapa, &cursor);
+    printf("\x1b[H");
     mostrarMapa(mapa, &cursor);
-    Sleep(10);
+
+    if((cursorPos.y/16 - 1) > 0 && (cursorPos.x/8 - 1) > 0 && (cursorPos.y/16 - 1) < 28 && (cursorPos.x/8 - 1) < 96){
+
+    cursor.indicatorY = cursorPos.y/16 - 1;
+    cursor.indicatorX = cursorPos.x/8 - 1;
+
+    }else{
+    cursor.indicatorY = cursor.indicatorY;
+    cursor.indicatorX = cursor.indicatorX;
     }
     }
 
-    else if(eleccion == 'v'){
+    }else if(eleccion == 'v'){
     leerArchivo();
 
     }
@@ -92,7 +109,7 @@ void estrucuraBasica(char mapa[fil][col]){
 void mostrarMapa(char mapa[fil][col], indicator * cursor){
     int i, j;
 
-    printf("%c------------------------------------------------------------------------------------------------%c\n",218, 191);
+    printf("%c------------------------------------------------------------------------------------------------%c\n",219, 191);
 
     for(i = 0; i<fil; i++){
         printf("|");
@@ -109,10 +126,13 @@ void mostrarMapa(char mapa[fil][col], indicator * cursor){
     }
     printf("%c------------------------------------------------------------------------------------------------%c\n", 192, 217);
 
-    printf("C para escribir\n");
-    printf("X para borrar\n");
+    printf("C o Click Izquierdo para escribir\n");
+    printf("X  o Shift + Click Izqueirdo para borrar\n");
     printf("R para borrar TODO\n");
-    printf("G para guardar en el archivo");
+    printf("G para guardar en el archivo\n");
+
+    GetCursorPos(&cursorPos);
+    ScreenToClient(hwndFound, &cursorPos);
 
 }
 
@@ -139,6 +159,19 @@ void indicador(char mapa[fil][col], indicator * cursor){
         mapa[cursor->indicatorY][cursor->indicatorX] = '#';
 
     }
+    if(GetAsyncKeyState(VK_LBUTTON)){
+
+        mapa[cursor->indicatorY][cursor->indicatorX] = '#';
+
+    }
+    if(GetAsyncKeyState(VK_LSHIFT)){
+        if(GetAsyncKeyState(VK_LBUTTON)){
+
+        mapa[cursor->indicatorY][cursor->indicatorX] = 219;
+
+    }
+    }
+
     if(GetKeyState('X') & 0x8000){
 
         mapa[cursor->indicatorY][cursor->indicatorX] = 219;
@@ -150,7 +183,6 @@ void indicador(char mapa[fil][col], indicator * cursor){
         infoArchivo(mapa);
         exit(0);
     }
-
 
 }
 
